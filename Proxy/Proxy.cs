@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
 using System.Threading;
+using System.Windows.Controls;
 using System.Windows.Threading;
 
 namespace ProxyTester.Proxy
@@ -35,7 +31,7 @@ namespace ProxyTester.Proxy
 
         private void GenerateRow()
         {
-            ProxyItem = new ProxyItem { IP = Host, Port = Port.ToString(), User = User, Pass = Pass, Status = "pending", Speed = ""};
+            ProxyItem = new ProxyItem { IP = Host, Port = Port.ToString(), User = User, Pass = Pass, Status = "pending", Speed = "" };
             _id = _listView.Items.Add(ProxyItem);
         }
 
@@ -47,7 +43,7 @@ namespace ProxyTester.Proxy
         public void UpdateRowThreadSafe()
         {
             if (_id < 0 || ProxyItem is null) return;
-          
+
             _dispatcher.BeginInvoke(new Action(delegate ()
             {
                 UpdateRow();
@@ -77,7 +73,7 @@ namespace ProxyTester.Proxy
         public void Run(string destination)
         {
             ProxyThread proxyThread = new ProxyThread(this, destination);
-            
+
             ThreadPool.SetMaxThreads(10, 10);
 
             ProxyItem.Status = "testing";

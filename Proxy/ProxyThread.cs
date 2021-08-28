@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net;
 using System.Diagnostics;
+using System.Net;
 
 namespace ProxyTester.Proxy
 {
@@ -40,8 +36,8 @@ namespace ProxyTester.Proxy
             }
 
             _stopWatch.Stop();
-           
-            if(_proxy.ProxyItem.Status == "success")
+
+            if (_proxy.ProxyItem.Status == "success")
                 _proxy.ProxyItem.Speed = _stopWatch.ElapsedMilliseconds.ToString() + "ms";
 
             _stopWatch.Reset();
