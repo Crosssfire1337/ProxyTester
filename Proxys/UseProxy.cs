@@ -1,17 +1,14 @@
-﻿using System;
+﻿using ProxyTester.Proxy;
+using System;
 using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Threading;
 
-namespace ProxyTester.Proxy
+namespace ProxyTester.Proxys
 {
-    class Proxy
+    public class UseProxy
     {
         private string _proxyString;
-        public string Host;
-        public int Port;
-        public string User;
-        public string Pass;
         public bool Ready = false;
         public bool Success = false;
         public ProxyItem ProxyItem;
@@ -19,20 +16,29 @@ namespace ProxyTester.Proxy
         private int _id = -2;
         private Dispatcher _dispatcher;
 
-        public Proxy(string proxyString, ListView listView, Dispatcher dispatcher)
+        public UseProxy(string proxyString, ListView listView, Dispatcher dispatcher)
         {
             _proxyString = proxyString;
             _listView = listView;
             _dispatcher = dispatcher;
 
-            Parse();
             GenerateRow();
+        }
+
+        private bool Validate()
+        {
+            if (_proxyString is null || _proxyString.Split(":").Length < 3) return false;
+
+            return true;
         }
 
         private void GenerateRow()
         {
-            ProxyItem = new ProxyItem { IP = Host, Port = Port.ToString(), User = User, Pass = Pass, Status = "pending", Speed = "" };
-            _id = _listView.Items.Add(ProxyItem);
+            if (!Validate()) throw new InvalidProxyException("Provided string is invalid");
+
+            string[] splittedProxy = _proxyString.Split(":");
+
+            _id = _listView.Items.Add(ProxyItem.CreateProxyItem(splittedProxy[0], splittedProxy[1], splittedProxy[2], splittedProxy[3], "pending", ""));
         }
 
         public void UpdateRow()
@@ -50,29 +56,9 @@ namespace ProxyTester.Proxy
             }));
         }
 
-        private bool Validate()
-        {
-            if (_proxyString is null || _proxyString.Split(":").Length < 3) return false;
-
-            return true;
-        }
-
-        private void Parse()
-        {
-            if (!Validate()) throw new InvalidProxyException("Provided string is invalid");
-
-            string[] splittedProxy = _proxyString.Split(":");
-
-            Host = splittedProxy[0];
-            Port = int.Parse(splittedProxy[1]);
-            User = splittedProxy[2];
-            Pass = splittedProxy[3];
-
-        }
-
         public void Run(string destination)
         {
-            ProxyThread proxyThread = new ProxyThread(this, destination);
+            ProxyThread proxyThread = new(this, destination);
 
             ThreadPool.SetMaxThreads(10, 10);
 

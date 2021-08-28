@@ -1,20 +1,12 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using ProxyTester.Proxys;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Microsoft.Win32;
-using System.IO;
-using System.Threading;
 
 namespace ProxyTester
 {
@@ -23,20 +15,24 @@ namespace ProxyTester
     /// </summary>
     public partial class MainWindow : Window
     {
-        private OpenFileDialog _openFileDialog;
-        private SaveFileDialog _saveFileDialog;
+        private readonly OpenFileDialog _openFileDialog;
+        private readonly SaveFileDialog _saveFileDialog;
         private List<string> _proxyStringList;
-        private readonly List<Proxy.Proxy> _proxyList;
+        public readonly List<UseProxy> _proxyList;
         public MainWindow()
         {
             InitializeComponent();
-            _openFileDialog = new OpenFileDialog();
-            _openFileDialog.Title = "Please choose proxy file";
-            _saveFileDialog = new SaveFileDialog();
-            _saveFileDialog.Title = "Export working proxies";
-            _saveFileDialog.DefaultExt = ".txt";
+            _openFileDialog = new OpenFileDialog
+            {
+                Title = "Please choose proxy file"
+            };
+            _saveFileDialog = new SaveFileDialog
+            {
+                Title = "Export working proxies",
+                DefaultExt = ".txt"
+            };
 
-            _proxyList = new List<Proxy.Proxy>();
+            _proxyList = new List<UseProxy>();
 
             System.Timers.Timer aTimer = new System.Timers.Timer();
 
@@ -55,38 +51,40 @@ namespace ProxyTester
 
         private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            //WPF wants to keep this
+            //WPF wants to keep this :)
         }
 
         async private void Button_Click(object sender, RoutedEventArgs e)
         {
             if (_openFileDialog.ShowDialog() is true)
+                //Refactor This
                 _proxyStringList = new List<string>(await File.ReadAllLinesAsync(_openFileDialog.FileName));
 
-            using(new Helpers.WaitCursor())
+            using (new Helpers.WaitCursor())
             {
-                foreach (string _proxy in _proxyStringList)
+                if (_proxyStringList is not null)
                 {
                     try
                     {
-                        _proxyList.Add(new Proxy.Proxy(_proxy, ProxyList, Application.Current.Dispatcher));
+                        _proxyStringList.ForEach(prox => _proxyList.Add(new UseProxy(prox, ProxyList, Application.Current.Dispatcher)));
                     }
                     catch (Exception ex)
                     {
                         if (ex is FormatException || ex is Proxy.InvalidProxyException)
-                            continue;
-                        throw new Exception("Unknown error");
+                            throw new Exception("Unknown error");
                     }
-
                 }
             }
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
-            _proxyList.Clear();
-            _proxyStringList.Clear();
-            ProxyList.Items.Clear();
+            if (_proxyList is not null && _proxyStringList is not null)
+            {
+                _proxyList.Clear();
+                _proxyStringList.Clear();
+                ProxyList.Items.Clear();
+            }
         }
 
         private void Button_Click_2(object sender, RoutedEventArgs e)
@@ -96,19 +94,17 @@ namespace ProxyTester
 
         private void Button_Click_3(object sender, RoutedEventArgs e)
         {
-            List<string> exportFileLines = new List<string>();
+            List<string> exportFileLines = new();
 
             if (_saveFileDialog.ShowDialog() is false)
                 return;
 
             _proxyList.ForEach(prox =>
             {
-
-                if (! (prox.ProxyItem.Status == "success")) return;
+                if (!(prox.ProxyItem.Status == "success")) return;
                 Console.WriteLine(prox.ProxyItem.IP + ":" + prox.ProxyItem.Port.ToString() + ":" + prox.ProxyItem.User + ":" + prox.ProxyItem.Pass);
                 exportFileLines.Add(prox.ProxyItem.IP + ":" + prox.ProxyItem.Port.ToString() + ":" + prox.ProxyItem.User + ":" + prox.ProxyItem.Pass);
             });
-
             File.WriteAllLinesAsync(_saveFileDialog.FileName, exportFileLines);
         }
     }
